@@ -175,12 +175,7 @@ def rtf_to_text(text, encoding="cp1252", errors="strict"):
         word, arg, _hex, char, brace, tchar = match.groups()
         if hexes and not _hex:
             # Decode accumulated hexes
-            out += bytes.fromhex(hexes).decode(
-                encoding=fonttbl.get(current_font, {"encoding": encoding}).get(
-                    "encoding", encoding
-                ),
-                errors=errors,
-            )
+            out += _decode_hexes(hexes, current_font, fonttbl, encoding, errors)
             hexes = None
         if brace:
             curskip = 0
@@ -257,4 +252,16 @@ def rtf_to_text(text, encoding="cp1252", errors="strict"):
             elif not ignorable and not suppress_output:
                 out += tchar
 
+    if hexes: # decode any remaining hexes, this can happen if the last character is a hex
+        out += _decode_hexes(hexes, current_font, fonttbl, encoding, errors)
+
     return out
+
+def _decode_hexes(hexes, current_font, fonttbl, encoding="cp1252", errors="strict"):
+    return bytes.fromhex(hexes).decode(
+        encoding=fonttbl.get(current_font, {"encoding": encoding}).get(
+            "encoding", encoding
+        ),
+        errors=errors,
+    )
+
